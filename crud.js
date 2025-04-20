@@ -1,0 +1,679 @@
+const db = require('./database'); //Receives the database
+const express = require('express'); 
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const secretKey = 'yourSecretKey';
+const app = express(); 
+
+const PORT = 3000; 
+app.use(express.json()); 
+app.use(express.urlencoded({ extended: true })); 
+app.use(express.static('public')); 
+app.listen(PORT, () => { 
+    console.log(`Server running on http://localhost:${PORT}`); 
+});
+
+//User CRUD
+//Create User Registration
+app.post('/register', async (req, res) => {
+    const { username, password, email } = req.body;
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    db.run("INSERT INTO User (username, password, email) VALUES (?, ?, ?)", [username, hashedPassword, email], function(err) {
+        if (err) {
+            return res.status(400).json({ message: err.message });
+        }
+        res.status(201).json({ message: 'User created', userId: this.lastID });
+    });
+});
+
+// User Login 
+app.post('/login', (req, res) => {
+    const { username, password } = req.body;
+
+    db.get("SELECT * FROM User WHERE username = ?", [username], async (err, user) => {
+        if (err || !user) {
+            return res.status(400).json({ message: 'User not found' });
+        }
+        const passwordMatch = await bcrypt.compare(password, user.password);
+        if (!passwordMatch) {
+            return res.status(401).json({ message: 'Incorrect password' });
+        }
+        const token = jwt.sign({ userId: user.UserID }, secretKey, { expiresIn: '1h' });
+        res.json({ message: 'Logged in', token: token });
+    });
+});
+
+//Authentication
+const authenticateToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    if (!token) return res.sendStatus(401);
+
+    jwt.verify(token, secretKey, (err, user) => {
+        if (err) return res.sendStatus(403);
+        req.user = user;
+        next();
+    });
+};
+
+//Event Read
+app.get('/event', authenticateToken, (req, res) => {
+    db.all("SELECT * FROM Event WHERE UserID = ?", [req.user.userId], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+
+  
+//-------------------------------------------------------------------------------------------------
+//Event CRUD
+//Create
+app.post('/event', authenticateToken, (req, res) => {
+    const { title, start, end, category } = req.body;
+    const userId = req.user.userId;
+
+    db.run(
+        "INSERT INTO Event (Title, Start, End, Category, UserID) VALUES (?, ?, ?, ?, ?)",
+        [title, start, end, category, userId],
+        function(err) {
+            if (err) {
+                return res.status(400).json({ message: err.message });
+            }
+            res.status(201).json({ message: 'Event created', eventId: this.lastID });
+        }
+    );
+});
+  
+//Update
+app.put('/event/:EventID', (req, res) => {
+    const { EventID } = req.params;
+    const { title, start, end, category } = req.body;
+  
+    const query = 
+        `UPDATE Event 
+        SET Title = ?, Start = ?, End = ?, Category = ?
+        WHERE EventID = ?`;
+  
+    db.run(query, [title, start, end, category, EventID], function (err) {
+        if (err) return res.status(500).json({ 
+            error: 'Failed to update record', details: err.message 
+        });
+        if (this.changes === 0) return res.status(404).json({ 
+            error: `No record found with ID ${EventID}` 
+        });
+        res.json({ message: `Record with ID ${EventID} updated successfully`, updatedId: EventID });
+    });
+});
+  
+//Delete
+app.delete('/event/:EventID', (req, res) => {
+    const { EventID } = req.params;
+    db.run('DELETE FROM Event WHERE EventID = ?', [EventID], function (err) {
+        if (err) return res.status(500).json({ 
+            error: 'Failed to delete record', details: err.message 
+        });
+        if (this.changes === 0) return res.status(404).json({ 
+            error: `No record found with ID ${EventID}` 
+        });
+        res.json({ message: `Record with ID ${EventID} deleted successfully` });
+    });
+})
+
+
+//Tasks CRUD
+//Create
+app.post('/tasks', (req, res) => {
+    const { title, start, end, category = 'task'} = req.body;
+    const query = `INSERT INTO Event (Title, Start, End, Category) VALUES (?, ?, ?, ?)`;
+  
+    db.run(query, [title, start, end, category], function (err) {
+        if (err) return res.status(500).json({ 
+            error: err.message 
+        });
+        res.json({ 
+            message: 'Task created', 
+            eventId: this.lastID 
+        });
+    });
+  });
+  
+//Read  
+app.get('/tasks', (req, res) => {
+    db.all("SELECT * FROM Event WHERE Category = 'task'", [], (err, rows) => {
+        if (err) return res.status(500).json({ 
+            error: err.message 
+        });
+        res.json(rows);
+    });
+});
+  
+//Update
+app.put('/tasks/:EventID', (req, res) => {
+    const { EventID } = req.params;
+    const { title, start, end, category = 'task'} = req.body;
+  
+    const query = 
+        `UPDATE Event 
+        SET Title = ?, Start = ?, End = ?, Category = ?
+        WHERE EventID = ?`;
+  
+    db.run(query, [title, start, end, category, EventID], function (err) {
+        if (err) return res.status(500).json({ 
+            error: 'Failed to update task', details: err.message 
+        });
+        if (this.changes === 0) return res.status(404).json({ 
+            error: `No record found with ID ${EventID}` 
+        });
+        res.json({ message: `Task with ID ${EventID} updated successfully`, updatedId: EventID });
+    });
+});
+  
+//Delete
+app.delete('/tasks/:EventID', (req, res) => {
+    const { EventID } = req.params;
+    db.run('DELETE FROM Event WHERE EventID = ?', [EventID], function (err) {
+        if (err) return res.status(500).json({ 
+            error: 'Failed to delete task', details: err.message 
+        });
+        if (this.changes === 0) return res.status(404).json({ 
+            error: `No record found with ID ${EventID}` 
+        });
+        res.json({ message: `Record with ID ${EventID} deleted successfully` });
+    });
+})
+
+//Assignment CRUD
+//Create
+app.post('/assignments', (req, res) => {
+    const { title, start, end, classId, category = 'assignment' } = req.body;
+
+    const eventQuery = `INSERT INTO Event (Title, Start, End, Category) VALUES (?, ?, ?, ?)`;
+    db.run(eventQuery, [title, start, end, category], function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        const eventId = this.lastID;
+
+        const assignmentQuery = `INSERT INTO Assignments (EventID, ClassID) VALUES (?, ?)`;
+        db.run(assignmentQuery, [eventId, classId], function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ message: 'Assignment created', eventId });
+        });
+    });
+});
+
+//Read
+app.get('/assignments', (req, res) => {
+    const query = `
+        SELECT e.*, a.ClassID
+        FROM Event e
+        JOIN Assignments a ON e.EventID = a.EventID
+        WHERE e.Category = 'assignment'
+    `;
+    db.all(query, [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+//Update
+app.put('/assignments/:EventID', (req, res) => {
+    const { EventID } = req.params;
+    const { title, start, end, classId, category = 'assignment' } = req.body;
+
+    const eventQuery = `UPDATE Event SET Title = ?, Start = ?, End = ?, Category = ? WHERE EventID = ?`;
+    db.run(eventQuery, [title, start, end, category, EventID], function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+
+        const assignmentQuery = `UPDATE Assignments SET ClassID = ? WHERE EventID = ?`;
+        db.run(assignmentQuery, [classId, EventID], function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ message: `Assignment with ID ${EventID} updated successfully` });
+        });
+    });
+});
+
+//Delete
+app.delete('/assignments/:EventID', (req, res) => {
+    const { EventID } = req.params;
+
+    db.run('DELETE FROM Assignments WHERE EventID = ?', [EventID], function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+
+        db.run('DELETE FROM Event WHERE EventID = ?', [EventID], function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ message: `Assignment with ID ${EventID} deleted successfully` });
+        });
+    });
+});
+
+//Class CRUD
+//Create
+app.post('/class', (req, res) => {
+    const { title, start, end, teacherId, category = 'class' } = req.body;
+
+    const eventQuery = `INSERT INTO Event (Title, Start, End, Category) VALUES (?, ?, ?, ?)`;
+    db.run(eventQuery, [title, start, end, category], function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        const eventId = this.lastID;
+
+        const classQuery = `INSERT INTO Class (EventID, StartDate, EndDate, TeacherID) VALUES (?, ?, ?, ?)`;
+        db.run(classQuery, [eventId, start, end, teacherId], function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ message: 'Class created', eventId });
+        });
+    });
+});
+
+//Read
+app.get('/class', (req, res) => {
+    const query = `
+        SELECT e.*, c.TeacherID
+        FROM Event e
+        JOIN Class c ON e.EventID = c.EventID
+        WHERE e.Category = 'class'
+    `;
+    db.all(query, [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+//Update
+app.put('/class/:EventID', (req, res) => {
+    const { EventID } = req.params;
+    const { title, start, end, teacherId, category = 'class' } = req.body;
+
+    const eventQuery = `UPDATE Event SET Title = ?, Start = ?, End = ?, Category = ? WHERE EventID = ?`;
+    db.run(eventQuery, [title, start, end, category, EventID], function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+
+        const classQuery = `UPDATE Class SET StartDate = ?, EndDate = ?, TeacherID = ? WHERE EventID = ?`;
+        db.run(classQuery, [start, end, teacherId, EventID], function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ message: `Class with ID ${EventID} updated successfully` });
+        });
+    });
+});
+
+//Delete
+app.delete('/class/:EventID', (req, res) => {
+    const { EventID } = req.params;
+
+    db.run('DELETE FROM Class WHERE EventID = ?', [EventID], function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+
+        db.run('DELETE FROM Event WHERE EventID = ?', [EventID], function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ message: `Class with ID ${EventID} deleted successfully` });
+        });
+    });
+});
+
+//Meeting CRUD
+//Create
+app.post('/meeting', (req, res) => {
+    const { title, start, end, peopleID } = req.body;
+
+    
+    const eventQuery = `INSERT INTO Event (Title, Start, End, Category) VALUES (?, ?, ?, 'meeting')`;
+    db.run(eventQuery, [title, start, end], function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        const eventId = this.lastID;
+
+        
+        const query = `INSERT INTO Meeting (EventID, PeopleID) VALUES (?, ?)`;
+        db.run(query, [eventId, peopleID], function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ message: 'Meeting created', meetingId: this.lastID });
+        });
+    });
+});
+
+//Read
+app.get('/meeting', (req, res) => {
+    db.all("SELECT * FROM Meeting", [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+//Update
+app.put('/meeting/:MeetingID', (req, res) => {
+    const { MeetingID } = req.params;
+    const { title, start, end, peopleID } = req.body;
+
+    
+    const eventQuery = `UPDATE Event SET Title = ?, Start = ?, End = ?, Category = 'meeting' WHERE EventID = ?`;
+    db.run(eventQuery, [title, start, end, MeetingID], function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        if (this.changes === 0) return res.status(404).json({ error: `No meeting found with ID ${MeetingID}` });
+
+    
+        const query = `UPDATE Meeting SET PeopleID = ? WHERE MeetingID = ?`;
+        db.run(query, [peopleID, MeetingID], function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ message: `Meeting with ID ${MeetingID} updated successfully` });
+        });
+    });
+});
+
+//Delete
+app.delete('/meeting/:MeetingID', (req, res) => {
+    const { MeetingID } = req.params;
+    db.run('DELETE FROM Meeting WHERE MeetingID = ?', [MeetingID], function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        if (this.changes === 0) return res.status(404).json({ error: `No meeting found with ID ${MeetingID}` });
+        res.json({ message: `Meeting with ID ${MeetingID} deleted successfully` });
+    });
+});
+
+
+//Hobby CRUD
+//Create 
+app.post('/hobby', (req, res) => {
+    const { title, description, startDate, endDate, category = 'hobby' } = req.body;
+
+   
+    const eventQuery = `INSERT INTO Event (Title, Start, End, Category) VALUES (?, ?, ?, ?)`;
+    db.run(eventQuery, [title, startDate, endDate, category], function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        const eventId = this.lastID;
+
+        
+        const query = `INSERT INTO Hobby (EventID, Description) VALUES (?, ?)`;
+        db.run(query, [eventId, description], function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ message: 'Hobby created', hobbyId: this.lastID });
+        });
+    });
+});
+
+//Read
+app.get('/hobby', (req, res) => {
+    db.all("SELECT * FROM Hobby", [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+//Update
+app.put('/hobby/:HobbyID', (req, res) => {
+    const { HobbyID } = req.params;
+    const { title, description, startDate, endDate, category = 'hobby' } = req.body;
+
+    
+    const eventQuery = `UPDATE Event SET Title = ?, Start = ?, End = ?, Category = ? WHERE EventID = ?`;
+    db.run(eventQuery, [title, startDate, endDate, category, HobbyID], function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        if (this.changes === 0) return res.status(404).json({ error: `No hobby found with ID ${HobbyID}` });
+
+        
+        const query = `UPDATE Hobby SET Description = ? WHERE HobbyID = ?`;
+        db.run(query, [description, HobbyID], function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ message: `Hobby with ID ${HobbyID} updated successfully` });
+        });
+    });
+});
+
+//Delete
+app.delete('/hobby/:HobbyID', (req, res) => {
+    const { HobbyID } = req.params;
+    db.run('DELETE FROM Hobby WHERE HobbyID = ?', [HobbyID], function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        if (this.changes === 0) return res.status(404).json({ error: `No hobby found with ID ${HobbyID}` });
+        res.json({ message: `Hobby with ID ${HobbyID} deleted successfully` });
+    });
+});
+
+
+//---------------------------------------------------------------------------------------------
+
+//People CRUD
+//Create
+app.post('/people', (req, res) => {
+    const { firstname, lastname, email, category } = req.body;
+    const query = `INSERT INTO People (FirstName, LastName, Email, Category) VALUES (?, ?, ?, ?)`;
+  
+    db.run(query, [firstname, lastname, email, category], function (err) {
+        if (err) return res.status(500).json({ 
+            error: err.message 
+        });
+        res.json({ 
+            message: 'Person profile created', 
+            eventId: this.lastID 
+        });
+    });
+  });
+  
+//Read  
+app.get('/people', (req, res) => {
+    db.all("SELECT * FROM People", [], (err, rows) => {
+        if (err) return res.status(500).json({ 
+            error: err.message 
+        });
+        res.json(rows);
+    });
+});
+  
+//Update
+app.put('/people/:PeopleID', (req, res) => {
+    const { PeopleID } = req.params;
+    const { firstname, lastname, email, category } = req.body;
+  
+    const query = 
+        `UPDATE People
+        SET FirstName = ?, LastName = ?, Email = ?, Category = ?
+        WHERE PeopleID = ?`;
+  
+    db.run(query, [firstname, lastname, email, category, PeopleID], function (err) {
+        if (err) return res.status(500).json({ 
+            error: 'Failed to update person', details: err.message 
+        });
+        if (this.changes === 0) return res.status(404).json({ 
+            error: `No person found with ID ${PeopleID}` 
+        });
+        res.json({ message: `Person with ID ${PeopleID} updated successfully`, updatedId: PeopleID });
+    });
+});
+  
+//Delete
+app.delete('/people/:PersonID', (req, res) => {
+    const { PersonID } = req.params;
+    db.run('DELETE FROM Person WHERE PersonID = ?', [PersonID], function (err) {
+        if (err) return res.status(500).json({ 
+            error: 'Failed to delete person', details: err.message 
+        });
+        if (this.changes === 0) return res.status(404).json({ 
+            error: `No person found with ID ${PersonID}` 
+        });
+        res.json({ message: `Person with ID ${PersonID} deleted successfully` });
+    });
+})
+
+// Teacher CRUD
+//Create
+app.post('/teacher', (req, res) => {
+    const { firstname, lastname, email, category = 'teacher'} = req.body;
+    const query = `INSERT INTO People (FirstName, LastName, Email, Category) VALUES (?, ?, ?, ?)`;
+
+    db.run(query, [firstname, lastname, email, category], function (err) {
+        if (err) return res.status(500).json({ 
+            error: err.message 
+        });
+        res.json({ 
+            message: 'Teacher profile created', 
+            personId: this.lastID 
+        });
+    });
+});
+
+// Read  
+app.get('/teacher', (req, res) => {
+    db.all("SELECT * FROM People WHERE Category = 'teacher'", [], (err, rows) => {
+        if (err) return res.status(500).json({ 
+            error: err.message 
+        });
+        res.json(rows);
+    });
+});
+
+// Update
+app.put('/teacher/:TeacherID', (req, res) => {
+    const { TeacherID } = req.params;
+    const { firstname, lastname, email, category = 'teacher'} = req.body;
+
+    const query = 
+        `UPDATE People
+        SET FirstName = ?, LastName = ?, Email = ?, Category = ?
+        WHERE PeopleID = ?`; 
+
+    db.run(query, [firstname, lastname, email, category, TeacherID], function (err) {
+        if (err) return res.status(500).json({ 
+            error: 'Failed to update teacher', details: err.message 
+        });
+        if (this.changes === 0) return res.status(404).json({ 
+            error: `No teacher found with ID ${TeacherID}` 
+        });
+        res.json({ message: `Teacher with ID ${TeacherID} updated successfully`, updatedId: TeacherID });
+    });
+});
+
+// Delete
+app.delete('/teacher/:TeacherID', (req, res) => {
+    const { TeacherID } = req.params;
+    db.run('DELETE FROM People WHERE PeopleID = ?', [TeacherID], function (err) { 
+        if (err) return res.status(500).json({ 
+            error: 'Failed to delete teacher', details: err.message 
+        });
+        if (this.changes === 0) return res.status(404).json({ 
+            error: `No teacher found with ID ${TeacherID}` 
+        });
+        res.json({ message: `Teacher with ID ${TeacherID} deleted successfully` });
+    });
+});
+
+//Family CRUD
+//Create
+app.post('/family', (req, res) => {
+    const { firstname, lastname, email, category = 'family'} = req.body;
+    const query = `INSERT INTO People (FirstName, LastName, Email, Category) VALUES (?, ?, ?, ?)`;
+
+    db.run(query, [firstname, lastname, email, category], function (err) {
+        if (err) return res.status(500).json({ 
+            error: err.message 
+        });
+        res.json({ 
+            message: 'Family member profile created', 
+            personId: this.lastID 
+        });
+    });
+});
+
+// Read  
+app.get('/family', (req, res) => {
+    db.all("SELECT * FROM People WHERE Category = 'family'", [], (err, rows) => {
+        if (err) return res.status(500).json({ 
+            error: err.message 
+        });
+        res.json(rows);
+    });
+});
+
+// Update
+app.put('/family/:FamilyID', (req, res) => {
+    const { FamilyID } = req.params;
+    const { firstname, lastname, email, category = 'family'} = req.body;
+
+    const query = 
+        `UPDATE People
+        SET FirstName = ?, LastName = ?, Email = ?, Category = ?
+        WHERE PeopleID = ?`; 
+
+    db.run(query, [firstname, lastname, email, category, FamilyID], function (err) {
+        if (err) return res.status(500).json({ 
+            error: 'Failed to update teacher', details: err.message 
+        });
+        if (this.changes === 0) return res.status(404).json({ 
+            error: `No family found with ID ${FamilyID}` 
+        });
+        res.json({ message: `Family with ID ${FamilyID} updated successfully`, updatedId: FamilyID });
+    });
+});
+
+// Delete
+app.delete('/family/:FamilyID', (req, res) => {
+    const { FamilyID } = req.params;
+    db.run('DELETE FROM People WHERE PeopleID = ?', [FamilyID], function (err) { 
+        if (err) return res.status(500).json({ 
+            error: 'Failed to delete family member', details: err.message 
+        });
+        if (this.changes === 0) return res.status(404).json({ 
+            error: `No family member found with ID ${FamilyID}` 
+        });
+        res.json({ message: `Family member with ID ${FamilyID} deleted successfully` });
+    });
+});
+
+//Friend CRUD
+//Create
+app.post('/friend', (req, res) => {
+    const { firstname, lastname, email, category = 'friend'} = req.body;
+    const query = `INSERT INTO People (FirstName, LastName, Email, Category) VALUES (?, ?, ?, ?)`;
+
+    db.run(query, [firstname, lastname, email, category], function (err) {
+        if (err) return res.status(500).json({ 
+            error: err.message 
+        });
+        res.json({ 
+            message: 'Friend profile created', 
+            personId: this.lastID 
+        });
+    });
+});
+
+// Read  
+app.get('/friend', (req, res) => {
+    db.all("SELECT * FROM People WHERE Category = 'friend'", [], (err, rows) => {
+        if (err) return res.status(500).json({ 
+            error: err.message 
+        });
+        res.json(rows);
+    });
+});
+
+// Update
+app.put('/friend/:FriendID', (req, res) => {
+    const { FriendID } = req.params;
+    const { firstname, lastname, email, category = 'friend'} = req.body;
+
+    const query = 
+        `UPDATE People
+        SET FirstName = ?, LastName = ?, Email = ?, Category = ?
+        WHERE PeopleID = ?`; 
+
+    db.run(query, [firstname, lastname, email, category, FriendID], function (err) {
+        if (err) return res.status(500).json({ 
+            error: 'Failed to update friend', details: err.message 
+        });
+        if (this.changes === 0) return res.status(404).json({ 
+            error: `No friend found with ID ${FriendID}` 
+        });
+        res.json({ message: `Friend with ID ${FriendID} updated successfully`, updatedId: TeacherID });
+    });
+});
+
+// Delete
+app.delete('/friend/:FriendID', (req, res) => {
+    const { FriendID } = req.params;
+    db.run('DELETE FROM People WHERE PeopleID = ?', [FriendID], function (err) {
+        if (err) return res.status(500).json({ 
+            error: 'Failed to delete friend', details: err.message 
+        });
+        if (this.changes === 0) return res.status(404).json({ 
+            error: `No friend found with ID ${FriendID}` 
+        });
+        res.json({ message: `Friend with ID ${FriendID} deleted successfully` });
+    });
+});
