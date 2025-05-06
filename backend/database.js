@@ -4,6 +4,24 @@ const db = new sqlite3.Database('./myfinaldatabase.db')
 
 
 db.serialize(() => { 
+
+    
+    db.run(`CREATE TABLE IF NOT EXISTS User (
+        UserID INTEGER PRIMARY KEY AUTOINCREMENT, 
+        username TEXT UNIQUE, 
+        password TEXT,
+        Email TEXT
+    )`, logResult('User'));
+
+    db.run(`CREATE TABLE IF NOT EXISTS Work (
+        WorkID INTEGER PRIMARY KEY AUTOINCREMENT,
+        Title TEXT NOT NULL, 
+        Start TEXT NOT NULL,
+        End TEXT NOT NULL,
+        UserID INTEGER,
+        FOREIGN KEY(UserID) REFERENCES User(UserID)
+    )`, logResult('Work'));
+    
     db.run(`CREATE TABLE IF NOT EXISTS Event(
     EventID INTEGER PRIMARY KEY,
     Title TEXT NOT NULL, 
@@ -19,13 +37,15 @@ db.serialize(() => {
     EventID INTEGER NOT NULL,
     FOREIGN KEY (EventID) REFERENCES Event(EventID)
     )`, logResult('Tasks'));
-
+    
     db.run(`CREATE TABLE IF NOT EXISTS People (
     PeopleID INTEGER PRIMARY KEY,
     FirstName TEXT NOT NULL, 
     LastName TEXT NOT NULL, 
     Email TEXT,
-    Category TEXT CHECK(Category IN ('teacher', 'friend', 'family'))
+    Category TEXT CHECK(Category IN ('teacher', 'friend', 'family')),
+    UserID INTEGER,
+    FOREIGN KEY(UserID) REFERENCES User(UserID)
     )`, logResult('People'));
 
     db.run(`CREATE TABLE IF NOT EXISTS Meeting (
@@ -38,12 +58,14 @@ db.serialize(() => {
 
     db.run(`CREATE TABLE IF NOT EXISTS Class (
     ClassID INTEGER PRIMARY KEY,
+    Title TEXT,
     Time TEXT,
     StartDate TEXT NOT NULL,
     EndDate TEXT NOT NULL,
     DaysOfTheWeek TEXT,
-    TeacherID INTEGER NOT NULL,
-    FOREIGN KEY (TeacherID) REFERENCES Teacher(TeacherID)
+    Teacher TEXT,
+    UserID INTEGER,
+    FOREIGN KEY(UserID) REFERENCES User(UserID)
     )`, logResult('Class'));
 
     db.run(`CREATE TABLE IF NOT EXISTS Assignments (
@@ -54,12 +76,6 @@ db.serialize(() => {
     FOREIGN KEY (ClassID) REFERENCES Class(ClassID)
     )`, logResult('Assignments'));
 
-    db.run(`CREATE TABLE IF NOT EXISTS User (
-    UserID INTEGER PRIMARY KEY AUTOINCREMENT, 
-    username TEXT UNIQUE, 
-    password TEXT,
-    Email TEXT
-    )`, logResult('User'));
 
     db.run(`CREATE TABLE IF NOT EXISTS Friend (
     FriendID INTEGER PRIMARY KEY,
@@ -81,9 +97,11 @@ db.serialize(() => {
 
     db.run(`CREATE TABLE IF NOT EXISTS Hobby (
     HobbyID INTEGER PRIMARY KEY,
-    EventID INTEGER NOT NULL,
     HobbyName TEXT NOT NULL,
-    FOREIGN KEY (EventID) REFERENCES Event(EventID)
+    Start TEXT NOT NULL,
+    End TEXT NOT NULL,
+    UserID INTEGER,
+    FOREIGN KEY(UserID) REFERENCES User(UserID)
     )`, logResult('Hobby'));
      
     
