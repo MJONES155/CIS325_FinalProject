@@ -198,67 +198,6 @@ app.delete('/work/:WorkID', (req, res) => {
     });
 })
 
-//Tasks CRUD
-//Create
-app.post('/tasks', (req, res) => {
-    const { title, start, end, category = 'task'} = req.body;
-    const query = `INSERT INTO Event (Title, Start, End, Category) VALUES (?, ?, ?, ?)`;
-  
-    db.run(query, [title, start, end, category], function (err) {
-        if (err) return res.status(500).json({ 
-            error: err.message 
-        });
-        res.json({ 
-            message: 'Task created', 
-            eventId: this.lastID 
-        });
-    });
-  });
-  
-//Read  
-app.get('/tasks', (req, res) => {
-    db.all("SELECT * FROM Event WHERE Category = 'task'", [], (err, rows) => {
-        if (err) return res.status(500).json({ 
-            error: err.message 
-        });
-        res.json(rows);
-    });
-});
-  
-//Update
-app.put('/tasks/:EventID', (req, res) => {
-    const { EventID } = req.params;
-    const { title, start, end, category = 'task'} = req.body;
-  
-    const query = 
-        `UPDATE Event 
-        SET Title = ?, Start = ?, End = ?, Category = ?
-        WHERE EventID = ?`;
-  
-    db.run(query, [title, start, end, category, EventID], function (err) {
-        if (err) return res.status(500).json({ 
-            error: 'Failed to update task', details: err.message 
-        });
-        if (this.changes === 0) return res.status(404).json({ 
-            error: `No record found with ID ${EventID}` 
-        });
-        res.json({ message: `Task with ID ${EventID} updated successfully`, updatedId: EventID });
-    });
-});
-  
-//Delete
-app.delete('/tasks/:EventID', (req, res) => {
-    const { EventID } = req.params;
-    db.run('DELETE FROM Event WHERE EventID = ?', [EventID], function (err) {
-        if (err) return res.status(500).json({ 
-            error: 'Failed to delete task', details: err.message 
-        });
-        if (this.changes === 0) return res.status(404).json({ 
-            error: `No record found with ID ${EventID}` 
-        });
-        res.json({ message: `Record with ID ${EventID} deleted successfully` });
-    });
-})
 
 //Assignment CRUD
 //Create
@@ -389,63 +328,7 @@ app.delete('/class/:ClassID', authenticateToken, (req, res) => {
     });
 });
 
-//Meeting CRUD
-//Create
-app.post('/meeting', (req, res) => {
-    const { title, start, end, peopleID } = req.body;
 
-    
-    const eventQuery = `INSERT INTO Event (Title, Start, End, Category) VALUES (?, ?, ?, 'meeting')`;
-    db.run(eventQuery, [title, start, end], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-        const eventId = this.lastID;
-
-        
-        const query = `INSERT INTO Meeting (EventID, PeopleID) VALUES (?, ?)`;
-        db.run(query, [eventId, peopleID], function (err) {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json({ message: 'Meeting created', meetingId: this.lastID });
-        });
-    });
-});
-
-//Read
-app.get('/meeting', (req, res) => {
-    db.all("SELECT * FROM Meeting", [], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(rows);
-    });
-});
-
-//Update
-app.put('/meeting/:MeetingID', (req, res) => {
-    const { MeetingID } = req.params;
-    const { title, start, end, peopleID } = req.body;
-
-    
-    const eventQuery = `UPDATE Event SET Title = ?, Start = ?, End = ?, Category = 'meeting' WHERE EventID = ?`;
-    db.run(eventQuery, [title, start, end, MeetingID], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-        if (this.changes === 0) return res.status(404).json({ error: `No meeting found with ID ${MeetingID}` });
-
-    
-        const query = `UPDATE Meeting SET PeopleID = ? WHERE MeetingID = ?`;
-        db.run(query, [peopleID, MeetingID], function (err) {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json({ message: `Meeting with ID ${MeetingID} updated successfully` });
-        });
-    });
-});
-
-//Delete
-app.delete('/meeting/:MeetingID', (req, res) => {
-    const { MeetingID } = req.params;
-    db.run('DELETE FROM Meeting WHERE MeetingID = ?', [MeetingID], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-        if (this.changes === 0) return res.status(404).json({ error: `No meeting found with ID ${MeetingID}` });
-        res.json({ message: `Meeting with ID ${MeetingID} deleted successfully` });
-    });
-});
 
 
 //Hobby CRUD
@@ -762,5 +645,124 @@ app.delete('/friend/:FriendID', (req, res) => {
             error: `No friend found with ID ${FriendID}` 
         });
         res.json({ message: `Friend with ID ${FriendID} deleted successfully` });
+    });
+});
+
+//Tasks CRUD
+//Create
+app.post('/tasks', (req, res) => {
+    const { title, start, end, category = 'task'} = req.body;
+    const query = `INSERT INTO Event (Title, Start, End, Category) VALUES (?, ?, ?, ?)`;
+  
+    db.run(query, [title, start, end, category], function (err) {
+        if (err) return res.status(500).json({ 
+            error: err.message 
+        });
+        res.json({ 
+            message: 'Task created', 
+            eventId: this.lastID 
+        });
+    });
+  });
+  
+//Read  
+app.get('/tasks', (req, res) => {
+    db.all("SELECT * FROM Event WHERE Category = 'task'", [], (err, rows) => {
+        if (err) return res.status(500).json({ 
+            error: err.message 
+        });
+        res.json(rows);
+    });
+});
+  
+//Update
+app.put('/tasks/:EventID', (req, res) => {
+    const { EventID } = req.params;
+    const { title, start, end, category = 'task'} = req.body;
+  
+    const query = 
+        `UPDATE Event 
+        SET Title = ?, Start = ?, End = ?, Category = ?
+        WHERE EventID = ?`;
+  
+    db.run(query, [title, start, end, category, EventID], function (err) {
+        if (err) return res.status(500).json({ 
+            error: 'Failed to update task', details: err.message 
+        });
+        if (this.changes === 0) return res.status(404).json({ 
+            error: `No record found with ID ${EventID}` 
+        });
+        res.json({ message: `Task with ID ${EventID} updated successfully`, updatedId: EventID });
+    });
+});
+  
+//Delete
+app.delete('/tasks/:EventID', (req, res) => {
+    const { EventID } = req.params;
+    db.run('DELETE FROM Event WHERE EventID = ?', [EventID], function (err) {
+        if (err) return res.status(500).json({ 
+            error: 'Failed to delete task', details: err.message 
+        });
+        if (this.changes === 0) return res.status(404).json({ 
+            error: `No record found with ID ${EventID}` 
+        });
+        res.json({ message: `Record with ID ${EventID} deleted successfully` });
+    });
+})
+//Meeting CRUD
+//Create
+app.post('/meeting', (req, res) => {
+    const { title, start, end, peopleID } = req.body;
+
+    
+    const eventQuery = `INSERT INTO Event (Title, Start, End, Category) VALUES (?, ?, ?, 'meeting')`;
+    db.run(eventQuery, [title, start, end], function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        const eventId = this.lastID;
+
+        
+        const query = `INSERT INTO Meeting (EventID, PeopleID) VALUES (?, ?)`;
+        db.run(query, [eventId, peopleID], function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ message: 'Meeting created', meetingId: this.lastID });
+        });
+    });
+});
+
+//Read
+app.get('/meeting', (req, res) => {
+    db.all("SELECT * FROM Meeting", [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+//Update
+app.put('/meeting/:MeetingID', (req, res) => {
+    const { MeetingID } = req.params;
+    const { title, start, end, peopleID } = req.body;
+
+    
+    const eventQuery = `UPDATE Event SET Title = ?, Start = ?, End = ?, Category = 'meeting' WHERE EventID = ?`;
+    db.run(eventQuery, [title, start, end, MeetingID], function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        if (this.changes === 0) return res.status(404).json({ error: `No meeting found with ID ${MeetingID}` });
+
+    
+        const query = `UPDATE Meeting SET PeopleID = ? WHERE MeetingID = ?`;
+        db.run(query, [peopleID, MeetingID], function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ message: `Meeting with ID ${MeetingID} updated successfully` });
+        });
+    });
+});
+
+//Delete
+app.delete('/meeting/:MeetingID', (req, res) => {
+    const { MeetingID } = req.params;
+    db.run('DELETE FROM Meeting WHERE MeetingID = ?', [MeetingID], function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        if (this.changes === 0) return res.status(404).json({ error: `No meeting found with ID ${MeetingID}` });
+        res.json({ message: `Meeting with ID ${MeetingID} deleted successfully` });
     });
 });
