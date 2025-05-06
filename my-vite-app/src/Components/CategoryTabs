@@ -1,0 +1,21 @@
+import React, { useState } from 'react';
+
+const CategoryTabs = ({ categories }) => {
+  const [activeCategory, setActiveCategory] = useState('All');
+
+  return (
+    <div className="category-tabs">
+      {categories.map(category => (
+        <button
+          key={category}
+          className={activeCategory === category ? 'active-tab' : ''}
+          onClick={() => setActiveCategory(category)}
+        >
+          {category}
+        </button>
+      ))}
+    </div>
+  );
+};
+
+export default CategoryTabs;
