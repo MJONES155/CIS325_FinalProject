@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-// Reuse your Popup component if it exists elsewhere in your code
+// Reuse your Popup component
 const Popup = ({ isOpen, closePopup, children }) => {
     if (!isOpen) return null;
 
@@ -15,7 +15,7 @@ const Popup = ({ isOpen, closePopup, children }) => {
     );
 };
 
-const People = () => {
+const People = (showEventPopup, setShowEventPopup) => {
     const [people, setPeople] = useState([]);
     const [newPeople, setNewPeople] = useState({ firstname: '', lastname: '', email: '', category: '' });
     const [editPeople, setEditPeople] = useState(null);
@@ -33,7 +33,6 @@ const People = () => {
                     }
                 });
                 setPeople(response.data);
-                setPeople(response.data.filter(p => p && p.PeopleID));
             } catch (error) {
                 setError('Failed to fetch people.');
             }
@@ -41,6 +40,7 @@ const People = () => {
 
         fetchPeople();
     }, []);
+
 
     // Create
     const handleCreatePeople = async () => {
@@ -116,10 +116,10 @@ const People = () => {
     const openEditPopup = (person) => {
         setEditPeople(person);
         setNewPeople({
-            firstname: person.FirstName,
-            lastname: person.LastName,
-            email: person.Email,
-            category: person.Category
+            firstname: person.firstname,
+            lastname: person.lastname,
+            email: person.email,
+            category: person.category
         });
         setIsEditMode(true);
         setIsPopupOpen(true);

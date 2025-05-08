@@ -102,7 +102,7 @@ app.post('/event', authenticateToken, (req, res) => {
 });
   
 //Update
-app.put('/event/:EventID', (req, res) => {
+app.put('/event/:EventID', authenticateToken, (req, res) => {
     const { EventID } = req.params;
     const { title, start, end, category } = req.body;
   
@@ -123,7 +123,7 @@ app.put('/event/:EventID', (req, res) => {
 });
   
 //Delete
-app.delete('/event/:EventID', (req, res) => {
+app.delete('/event/:EventID', authenticateToken, (req, res) => {
     const { EventID } = req.params;
     db.run('DELETE FROM Event WHERE EventID = ?', [EventID], function (err) {
         if (err) return res.status(500).json({ 
@@ -146,7 +146,7 @@ app.post('/work', authenticateToken, (req, res) => {
     const userId = req.user.userId;
 
     db.run(
-        "INSERT INTO Work (Title, Start, End, UserID) VALUES (?, ?, ?, ?)",
+        `INSERT INTO Work (Title, Start, End, UserID) VALUES (?, ?, ?, ?)`,
         [title, start, end, userId],
         function(err) {
             if (err) {
@@ -203,72 +203,6 @@ app.delete('/work/:WorkID', (req, res) => {
     });
 })
 
-
-
-
-
-//Assignment CRUD
-//Create
-app.post('/assignments', (req, res) => {
-    const { title, start, end, classId, category = 'assignment' } = req.body;
-
-    const eventQuery = `INSERT INTO Event (Title, Start, End, Category) VALUES (?, ?, ?, ?)`;
-    db.run(eventQuery, [title, start, end, category], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-        const eventId = this.lastID;
-
-        const assignmentQuery = `INSERT INTO Assignments (EventID, ClassID) VALUES (?, ?)`;
-        db.run(assignmentQuery, [eventId, classId], function (err) {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json({ message: 'Assignment created', eventId });
-        });
-    });
-});
-
-//Read
-app.get('/assignments', (req, res) => {
-    const query = `
-        SELECT e.*, a.ClassID
-        FROM Event e
-        JOIN Assignments a ON e.EventID = a.EventID
-        WHERE e.Category = 'assignment'
-    `;
-    db.all(query, [], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(rows);
-    });
-});
-
-//Update
-app.put('/assignments/:EventID', (req, res) => {
-    const { EventID } = req.params;
-    const { title, start, end, classId, category = 'assignment' } = req.body;
-
-    const eventQuery = `UPDATE Event SET Title = ?, Start = ?, End = ?, Category = ? WHERE EventID = ?`;
-    db.run(eventQuery, [title, start, end, category, EventID], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-
-        const assignmentQuery = `UPDATE Assignments SET ClassID = ? WHERE EventID = ?`;
-        db.run(assignmentQuery, [classId, EventID], function (err) {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json({ message: `Assignment with ID ${EventID} updated successfully` });
-        });
-    });
-});
-
-//Delete
-app.delete('/assignments/:EventID', (req, res) => {
-    const { EventID } = req.params;
-
-    db.run('DELETE FROM Assignments WHERE EventID = ?', [EventID], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-
-        db.run('DELETE FROM Event WHERE EventID = ?', [EventID], function (err) {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json({ message: `Assignment with ID ${EventID} deleted successfully` });
-        });
-    });
-});
 
 
 
@@ -405,6 +339,18 @@ app.delete('/hobby/:HobbyID', (req, res) => {
 //---------------------------------------------------------------------------------------------
 
 //People CRUD
+
+//Read  
+app.get('/people', authenticateToken, (req, res) => {
+    db.all("SELECT * FROM People WHERE UserID = ?", [req.user.userId], (err, rows) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.json(rows);
+    });
+});
+
+
 //Create
 app.post('/people', authenticateToken, (req, res) => {
     const { firstname, lastname, email, category } = req.body;
@@ -426,15 +372,7 @@ app.post('/people', authenticateToken, (req, res) => {
   
 
 
-//Read  
-app.get('/people', authenticateToken, (req, res) => {
-    db.all("SELECT * FROM People WHERE UserID = ?", [user.userId], (err, rows) => {
-        if (err) {
-            return res.status(500).json({ error: err.message });
-        }
-        res.json(rows);
-    });
-});
+
 
   
 //Update
@@ -458,6 +396,8 @@ app.put('/people/:PeopleID', (req, res) => {
     });
 });
   
+  
+
 //Delete
 app.delete('/people/:PeopleID', (req, res) => {
     const { PeopleID } = req.params;
@@ -775,5 +715,68 @@ app.delete('/meeting/:MeetingID', (req, res) => {
         if (err) return res.status(500).json({ error: err.message });
         if (this.changes === 0) return res.status(404).json({ error: `No meeting found with ID ${MeetingID}` });
         res.json({ message: `Meeting with ID ${MeetingID} deleted successfully` });
+    });
+});
+
+//Assignment CRUD
+//Create
+app.post('/assignments', (req, res) => {
+    const { title, start, end, classId, category = 'assignment' } = req.body;
+
+    const eventQuery = `INSERT INTO Event (Title, Start, End, Category) VALUES (?, ?, ?, ?)`;
+    db.run(eventQuery, [title, start, end, category], function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        const eventId = this.lastID;
+
+        const assignmentQuery = `INSERT INTO Assignments (EventID, ClassID) VALUES (?, ?)`;
+        db.run(assignmentQuery, [eventId, classId], function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ message: 'Assignment created', eventId });
+        });
+    });
+});
+
+//Read
+app.get('/assignments', (req, res) => {
+    const query = `
+        SELECT e.*, a.ClassID
+        FROM Event e
+        JOIN Assignments a ON e.EventID = a.EventID
+        WHERE e.Category = 'assignment'
+    `;
+    db.all(query, [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+//Update
+app.put('/assignments/:EventID', (req, res) => {
+    const { EventID } = req.params;
+    const { title, start, end, classId, category = 'assignment' } = req.body;
+
+    const eventQuery = `UPDATE Event SET Title = ?, Start = ?, End = ?, Category = ? WHERE EventID = ?`;
+    db.run(eventQuery, [title, start, end, category, EventID], function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+
+        const assignmentQuery = `UPDATE Assignments SET ClassID = ? WHERE EventID = ?`;
+        db.run(assignmentQuery, [classId, EventID], function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ message: `Assignment with ID ${EventID} updated successfully` });
+        });
+    });
+});
+
+//Delete
+app.delete('/assignments/:EventID', (req, res) => {
+    const { EventID } = req.params;
+
+    db.run('DELETE FROM Assignments WHERE EventID = ?', [EventID], function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+
+        db.run('DELETE FROM Event WHERE EventID = ?', [EventID], function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ message: `Assignment with ID ${EventID} deleted successfully` });
+        });
     });
 });
