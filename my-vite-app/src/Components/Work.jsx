@@ -136,7 +136,6 @@ const Work = ({ showEventPopup, setShowEventPopup, selectedDate }) => {
             title: work.Title,
             start: work.Start,
             end: work.End,
-            category: work.Category
         });
         setIsEditMode(true);
         setIsPopupOpen(true);
@@ -163,7 +162,6 @@ const Work = ({ showEventPopup, setShowEventPopup, selectedDate }) => {
                                     <h4>{work.Title}</h4>
                                     <p>Start: {new Date(work.Start).toLocaleString()}</p>
                                     <p>End: {new Date(work.End).toLocaleString()}</p>
-                                    <p>Category: {work.Category}</p>
                                     <button onClick={() => openEditPopup(work)}>Edit</button>
                                     <button onClick={() => handleDeleteWork(work.WorkID)}>Delete Event</button>
                                 </div>
