@@ -8,7 +8,7 @@ const Popup = ({ isOpen, closePopup, children }) => {
     return (
         <div className="popup-overlay">
             <div className="popup-content">
-                <button className="close-btn" onClick={closePopup}>X</button> //
+                <button className="close-btn" onClick={closePopup}>X</button> 
                 {children}
             </div>
         </div>
@@ -18,7 +18,7 @@ const Popup = ({ isOpen, closePopup, children }) => {
 //Event Component
 const Event = ({ showEventPopup, setShowEventPopup, selectedDate }) => {
     const [events, setEvents] = useState([]);
-    const [newEvent, setNewEvent] = useState({ title: '', start: '', end: '', category: '' });
+    const [newEvent, setNewEvent] = useState({ title: '', start: '', end: '', category: '' }); //used to get information for CRUD as well as for the popup
     const [editEvent, setEditEvent] = useState(null); // Used for editing events
     const [error, setError] = useState('');
     const [isPopupOpen, setIsPopupOpen] = useState(false); // Tracks popup visibility
@@ -48,7 +48,7 @@ const Event = ({ showEventPopup, setShowEventPopup, selectedDate }) => {
         try {
             await axios.post('http://localhost:3001/event', newEvent, {
                 headers: {
-                    Authorization: `Bearer ${localStorage.getItem('token')}`
+                    Authorization: `Bearer ${localStorage.getItem('token')}` // sends a JWT token
                 }
             });
             setNewEvent({ title: '', start: '', end: '', category: '' }); // Resets fields for next input
@@ -57,7 +57,7 @@ const Event = ({ showEventPopup, setShowEventPopup, selectedDate }) => {
             // Re-fetch events
             const response = await axios.get('http://localhost:3001/event', {
                 headers: {
-                    Authorization: `Bearer ${localStorage.getItem('token')}`
+                    Authorization: `Bearer ${localStorage.getItem('token')}` // sends a JWT token
                 }
             });
             setEvents(response.data);
@@ -71,7 +71,7 @@ const Event = ({ showEventPopup, setShowEventPopup, selectedDate }) => {
         try {
             await axios.put(`http://localhost:3001/event/${editEvent.EventID}`, newEvent, {
                 headers: {
-                    Authorization: `Bearer ${localStorage.getItem('token')}`
+                    Authorization: `Bearer ${localStorage.getItem('token')}` // sends a JWT token
                 }
             });
             setError('');
@@ -134,10 +134,10 @@ const Event = ({ showEventPopup, setShowEventPopup, selectedDate }) => {
     const openEditPopup = (event) => {
         setEditEvent(event);
         setNewEvent({
-            title: event.Title,
-            start: event.Start,
-            end: event.End,
-            category: event.Category
+            title: event.title,
+            start: event.start,
+            end: event.end,
+            category: event.category
         });
         setIsEditMode(true);
         setIsPopupOpen(true);
@@ -176,12 +176,7 @@ const Event = ({ showEventPopup, setShowEventPopup, selectedDate }) => {
 
             {/* Event Popup */}
             <Popup isOpen={isPopupOpen} closePopup={() => setIsPopupOpen(false)}>
-                <h3>{isEditMode ? 'Edit Event' : 'Create Event'}</h3>  {/* If it is edit mode display edit event. Else display create event */}
-                {isEditMode ? (
-                    <button onClick={handleUpdateEvent}>Update Event</button>
-                ) : (
-                    <button onClick={handleCreateEvent}>Create Event</button>
-                )}
+                
                 <input
                     type="text"
                     placeholder="Event Title"
@@ -210,6 +205,12 @@ const Event = ({ showEventPopup, setShowEventPopup, selectedDate }) => {
                     <option value="class">Class</option>
                     <option value="hobby">Hobby</option>
                 </select>
+                <h3>{isEditMode ? 'Edit Event' : 'Create Event'}</h3>  {/* If it is edit mode display edit event. Else display create event */}
+                {isEditMode ? (
+                    <button onClick={handleUpdateEvent}>Update Event</button>
+                ) : (
+                    <button classname="create" onClick={handleCreateEvent}>Create Event</button>
+                )}
 
             </Popup>
         </div>

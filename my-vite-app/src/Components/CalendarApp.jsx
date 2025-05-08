@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom';
 
 
 const CalendarApp = () => {
+    // Days and months used for displaying calendar headers
     const daysOfWeek = ['Sun', 'Mon', 'Tues', 'Wed', 'Thu', 'Fri', 'Sat'] //put days into an array
     const monthsOfYear = [ //put months into an array
         'January', 
@@ -37,7 +38,7 @@ const CalendarApp = () => {
 
 
 
-
+    // Function to go to the previous month
     const prevMonth = () => {
         //Either goes to Dec if Jan, otherwise goes to previous month in array
         setCurrentMonth((prevMonth) => (prevMonth === 0 ? 11 : prevMonth - 1)) 
@@ -45,6 +46,7 @@ const CalendarApp = () => {
         setCurrentYear((prevYear) => (currentMonth === 0 ? prevYear - 1 : prevYear))
     }
 
+    // Function to go to the next month
     const nextMonth = () => {
         //Either goes to Jan if Dec, otherwise goes to previous month in array
         setCurrentMonth((prevMonth) => (prevMonth === 11 ? 0 : prevMonth + 1)) 
@@ -52,24 +54,24 @@ const CalendarApp = () => {
         setCurrentYear((prevYear) => (currentMonth === 11 ? prevYear + 1 : prevYear))
     }
     
-    const handleDayClick = (day) => {
-        const clickedDate = new Date(currentYear, currentMonth, day)
-        const today = new Date()
+    //const handleDayClick = (day) => {
+        //const clickedDate = new Date(currentYear, currentMonth, day)
+        //const today = new Date()
 
-        if(clickedDate >= today || isSameDay(clickedDate, today)) {
-            setSelectedDate(clickedDate)
-            setShowEventPopup(true)
-        }
-    }
+        //if(clickedDate >= today || isSameDay(clickedDate, today)) {
+            //setSelectedDate(clickedDate)
+            //setShowEventPopup(true)
+        //}
+    //}
 
-    const isSameDay = (date1, date2) => {
-        return (
-            date1.getFullYear() === date2.getFullYear() &&
-            date1.getMonth() === date2.getMonth() &&
-            date1.getDate() === date2.getDate()
+    //const isSameDay = (date1, date2) => {
+        //return (
+            //date1.getFullYear() === date2.getFullYear() &&
+            //date1.getMonth() === date2.getMonth() &&
+            //date1.getDate() === date2.getDate()
             
-        )
-    }
+        //)
+    //}
 
 
     return (
@@ -113,12 +115,13 @@ const CalendarApp = () => {
             </div>
             <div className = "calendar">
                 <h1 className = "heading">Calendar</h1>
+                {/* Date navigation header */}
                 <div className = "navigate-date">
                     <h2 className="month">{monthsOfYear[currentMonth]}</h2>
                     <h2 className = "year">{currentYear}</h2>
                     <div className = "buttons">
-                        <i className="bx bx-chevron-left" onClick={prevMonth}></i>
-                        <i className="bx bx-chevron-right" onClick={nextMonth}></i>
+                        <i className="bx bx-chevron-left" onClick={prevMonth}></i> {/* Previous month arrow */}
+                        <i className="bx bx-chevron-right" onClick={nextMonth}></i> {/* Next month arrow */}
                     </div>
                 </div>
 
@@ -127,9 +130,12 @@ const CalendarApp = () => {
                 </div>
                 
                 <div className="days">
+                    {/* Empty placeholders for days before the 1st of the month to align the calendar grid */}
                     {[...Array(firstDayOfMonth).keys()].map((_, index) => (
-                        <span key={`empty-${index}`}/>
+                        <span key={`empty-${index}`}/> // Render empty span for alignment
                     ))}
+
+                    {/* Render each day of the current month */}
                     {[...Array(daysInMonth).keys()].map((day) => (
                         <span key={day + 1} className={day + 1 === currentDate.getDate() && currentMonth === currentDate.getMonth() && 
                             currentYear === currentDate.getFullYear() 
@@ -138,7 +144,7 @@ const CalendarApp = () => {
                         }
                         onClick={() => handleDayClick (day + 1)}
                         
-                        > {day + 1}</span>
+                        > {day + 1}</span> /* Display the day number */
                     ))}
                 </div>
             </div>

@@ -23,13 +23,13 @@ db.serialize(() => {
     )`, logResult('Work'));
     
     db.run(`CREATE TABLE IF NOT EXISTS Event(
-    EventID INTEGER PRIMARY KEY,
-    Title TEXT NOT NULL, 
-    Start TEXT NOT NULL,
-    End TEXT NOT NULL,
-    Category TEXT CHECK(Category IN ('task', 'assignment', 'meeting', 'class', 'hobby')),
-    UserID INTEGER,
-    FOREIGN KEY(UserID) REFERENCES User(UserID)
+        EventID INTEGER PRIMARY KEY,
+        Title TEXT NOT NULL, 
+        Start TEXT NOT NULL,
+        End TEXT NOT NULL,
+        Category TEXT CHECK(Category IN ('task', 'assignment', 'meeting', 'class', 'hobby')),
+        UserID INTEGER,
+        FOREIGN KEY(UserID) REFERENCES User(UserID)
     )`, logResult('Event'));
 
     db.run(`CREATE TABLE IF NOT EXISTS Tasks (
