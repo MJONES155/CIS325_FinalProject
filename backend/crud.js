@@ -1,4 +1,4 @@
-const db = require('./database'); //Receives the databanpse
+const db = require('./database'); //Receives the database
 const express = require('express'); 
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -32,13 +32,14 @@ app.post('/register', async (req, res) => {
                 if (err) {
                     return res.status(400).json({ message: err.message });
                 }
-                res.status(201).json({ message: 'User created', userid: this.lastID });
+                res.status(201).json({ message: 'User created', userId: this.lastID });
             }
         );
     } catch (error) {
         res.status(500).json({ message: "Internal server error during registration" });
     }
 });
+
 
 // User Login 
 app.post('/login', (req, res) => {
@@ -53,7 +54,7 @@ app.post('/login', (req, res) => {
         if (!passwordMatch) {
             return res.status(401).json({ message: 'Incorrect password' });
         }
-        const token = jwt.sign({ userId: user.userid }, secretKey, { expiresIn: '1h' });
+        const token = jwt.sign({ userId: user.UserID }, secretKey, { expiresIn: '1h' });
         res.json({ message: 'Logged in', token: token });
     });
 });
@@ -73,24 +74,24 @@ const authenticateToken = (req, res, next) => {
 
 //Event Read
 app.get('/event', authenticateToken, (req, res) => {
-    db.all("SELECT * FROM Event WHERE UserID = ?", [req.user.userid], (err, rows) => {
+    db.all("SELECT * FROM Event WHERE UserID = ?", [req.user.userId], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(rows);
     });
 });
 
 
-
+  
 //-------------------------------------------------------------------------------------------------
 //Event CRUD
 //Create
 app.post('/event', authenticateToken, (req, res) => {
     const { title, start, end, category } = req.body;
-    const userid = req.user.userid;
+    const userId = req.user.userId;
 
     db.run(
         "INSERT INTO Event (Title, Start, End, Category, UserID) VALUES (?, ?, ?, ?, ?)",
-        [title, start, end, category, userid],
+        [title, start, end, category, userId],
         function(err) {
             if (err) {
                 return res.status(400).json({ message: err.message });
@@ -133,18 +134,20 @@ app.delete('/event/:EventID', (req, res) => {
         });
         res.json({ message: `Record with ID ${EventID} deleted successfully` });
     });
-})
+});
+
+
 
 //Work CRUD
 
 //Create
 app.post('/work', authenticateToken, (req, res) => {
     const { title, start, end } = req.body;
-    const userid = req.user.userid;
+    const userId = req.user.userId;
 
     db.run(
         "INSERT INTO Work (Title, Start, End, UserID) VALUES (?, ?, ?, ?)",
-        [title, start, end, userid],
+        [title, start, end, userId],
         function(err) {
             if (err) {
                 return res.status(400).json({ message: err.message });
@@ -154,13 +157,15 @@ app.post('/work', authenticateToken, (req, res) => {
     );
 });
 
+
 //Read
 app.get('/work', authenticateToken, (req, res) => {
-    db.all("SELECT * FROM Work WHERE UserID = ?", [req.user.userid], (err, rows) => {
+    db.all("SELECT * FROM Work WHERE UserID = ?", [req.user.userId], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(rows);
     });
 });
+
 
   
 //Update
@@ -197,6 +202,9 @@ app.delete('/work/:WorkID', (req, res) => {
         res.json({ message: `Record with ID ${WorkID} deleted successfully` });
     });
 })
+
+
+
 
 
 //Assignment CRUD
@@ -400,24 +408,27 @@ app.delete('/hobby/:HobbyID', (req, res) => {
 //Create
 app.post('/people', authenticateToken, (req, res) => {
     const { firstname, lastname, email, category } = req.body;
-    const userid = req.user.userid;
-    const query = `INSERT INTO People (FirstName, LastName, Email, Category, UserID) VALUES (?, ?, ?, ?, ?)`;
+    const userId = req.user.userId;
     
+    db.run(
+        "INSERT INTO People (FirstName, LastName, Email, Category, UserID) VALUES (?, ?, ?, ?, ?)",
+        [firstname, lastname, email, category, userId], 
+        function (err) {
+            if (err) {
+                return res.status(400).json({ message: err.message });
+            }
+            res.status(201).json({ message: 'Person created', personId: this.lastID });
+        }
+    );
+});
+
+
   
-    db.run(query, [firstname, lastname, email, category, userid], function (err) {
-        if (err) return res.status(500).json({ 
-            error: err.message 
-        });
-        res.json({ 
-            message: 'Person profile created', 
-            personId: this.lastID 
-        });
-    });
-  });
-  
+
+
 //Read  
 app.get('/people', authenticateToken, (req, res) => {
-    db.all("SELECT * FROM People WHERE UserID = ?", [req.user.userid], (err, rows) => {
+    db.all("SELECT * FROM People WHERE UserID = ?", [user.userId], (err, rows) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
