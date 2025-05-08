@@ -193,18 +193,6 @@ const Event = ({ showEventPopup, setShowEventPopup, selectedDate }) => {
                     value={newEvent.end}
                     onChange={(e) => setNewEvent({ ...newEvent, end: e.target.value })}
                 />
-                <select
-                    /* Displays all categories */
-                    value={newEvent.category}
-                    onChange={(e) => setNewEvent({ ...newEvent, category: e.target.value })}
-                >
-                    <option value="">Select Category</option>
-                    <option value="task">Task</option>
-                    <option value="assignment">Assignment</option>
-                    <option value="meeting">Meeting</option>
-                    <option value="class">Class</option>
-                    <option value="hobby">Hobby</option>
-                </select>
                 <h3>{isEditMode ? 'Edit Event' : 'Create Event'}</h3>  {/* If it is edit mode display edit event. Else display create event */}
                 {isEditMode ? (
                     <button onClick={handleUpdateEvent}>Update Event</button>

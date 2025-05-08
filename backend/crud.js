@@ -87,7 +87,7 @@ app.get('/event', authenticateToken, (req, res) => {
 //Create
 app.post('/event', authenticateToken, (req, res) => {
     const { title, start, end, category } = req.body;
-    const userId = req.user.userId;
+    const userId = user.userId;
 
     db.run(
         "INSERT INTO Event (Title, Start, End, Category, UserID) VALUES (?, ?, ?, ?, ?)",
@@ -136,6 +136,78 @@ app.delete('/event/:EventID', authenticateToken, (req, res) => {
     });
 });
 
+//---------------------------------------------------------------------------------------------
+
+//People CRUD
+
+//Read  
+app.get('/people', authenticateToken, (req, res) => {
+    db.all("SELECT * FROM People WHERE UserID = ?", [req.user.userId], (err, rows) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.json(rows);
+    });
+});
+
+
+//Create
+app.post('/people', authenticateToken, (req, res) => {
+    const { firstname, lastname, email, category } = req.body;
+    const userid = user.userId;
+    
+    db.run(
+        "INSERT INTO People (FirstName, LastName, Email, Category, UserID) VALUES (?, ?, ?, ?, ?)",
+        [firstname, lastname, email, category, userid], 
+        function (err) {
+            if (err) {
+                return res.status(400).json({ message: err.message });
+            }
+            res.status(201).json({ message: 'Person created', personId: this.lastID });
+        }
+    );
+});
+
+
+
+
+  
+//Update
+app.put('/people/:PeopleID', (req, res) => {
+    const { PeopleID } = req.params;
+    const { firstname, lastname, email, category } = req.body;
+  
+    const query = 
+        `UPDATE People
+        SET FirstName = ?, LastName = ?, Email = ?, Category = ?
+        WHERE PeopleID = ?`;
+  
+    db.run(query, [firstname, lastname, email, category, PeopleID], function (err) {
+        if (err) return res.status(500).json({ 
+            error: 'Failed to update person', details: err.message 
+        });
+        if (this.changes === 0) return res.status(404).json({ 
+            error: `No person found with ID ${PeopleID}` 
+        });
+        res.json({ message: `Person with ID ${PeopleID} updated successfully`, updatedId: PeopleID });
+    });
+});
+  
+  
+
+//Delete
+app.delete('/people/:PeopleID', (req, res) => {
+    const { PeopleID } = req.params;
+    db.run('DELETE FROM People WHERE PeopleID = ?', [PeopleID], function (err) {
+        if (err) return res.status(500).json({ 
+            error: 'Failed to delete person', details: err.message 
+        });
+        if (this.changes === 0) return res.status(404).json({ 
+            error: `No record found with ID ${PeopleID}` 
+        });
+        res.json({ message: `Record with ID ${PeopleID} deleted successfully` });
+    });
+});
 
 
 //Work CRUD
@@ -143,10 +215,10 @@ app.delete('/event/:EventID', authenticateToken, (req, res) => {
 //Create
 app.post('/work', authenticateToken, (req, res) => {
     const { title, start, end } = req.body;
-    const userId = req.user.userId;
+    const userId = user.userId;
 
     db.run(
-        `INSERT INTO Work (Title, Start, End, UserID) VALUES (?, ?, ?, ?)`,
+        "INSERT INTO Work (Title, Start, End, UserID) VALUES (?, ?, ?, ?)",
         [title, start, end, userId],
         function(err) {
             if (err) {
@@ -210,11 +282,11 @@ app.delete('/work/:WorkID', (req, res) => {
 //Create
 app.post('/class', authenticateToken, (req, res) => {
     const { title, time, startdate, enddate, daysoftheweek, teacher } = req.body;
-    const userid = req.user.userid;
+    const userId = req.user.userId;
   
     db.run(
         "INSERT INTO Class (Title, Time, StartDate, EndDate, DaysOfTheWeek, Teacher, UserID) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        [title, time, startdate, enddate, daysoftheweek, teacher, userid],
+        [title, time, startdate, enddate, daysoftheweek, teacher, userId],
         function(err) {
             if (err) {
                 return res.status(400).json({ message: err.message });
@@ -223,13 +295,12 @@ app.post('/class', authenticateToken, (req, res) => {
         }
     );
 });
-  
 
 
 
 //Read
 app.get('/class', authenticateToken, (req, res) => {
-    db.all("SELECT * FROM Class WHERE UserID = ?", [req.user.userid], (err, rows) => {
+    db.all("SELECT * FROM Class WHERE UserID = ?", [req.user.userId], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(rows);
     });
@@ -335,82 +406,6 @@ app.delete('/hobby/:HobbyID', (req, res) => {
 })
 
 
-
-//---------------------------------------------------------------------------------------------
-
-//People CRUD
-
-//Read  
-app.get('/people', authenticateToken, (req, res) => {
-    db.all("SELECT * FROM People WHERE UserID = ?", [req.user.userId], (err, rows) => {
-        if (err) {
-            return res.status(500).json({ error: err.message });
-        }
-        res.json(rows);
-    });
-});
-
-
-//Create
-app.post('/people', authenticateToken, (req, res) => {
-    const { firstname, lastname, email, category } = req.body;
-    const userId = req.user.userId;
-    
-    db.run(
-        "INSERT INTO People (FirstName, LastName, Email, Category, UserID) VALUES (?, ?, ?, ?, ?)",
-        [firstname, lastname, email, category, userId], 
-        function (err) {
-            if (err) {
-                return res.status(400).json({ message: err.message });
-            }
-            res.status(201).json({ message: 'Person created', personId: this.lastID });
-        }
-    );
-});
-
-
-  
-
-
-
-
-  
-//Update
-app.put('/people/:PeopleID', (req, res) => {
-    const { PeopleID } = req.params;
-    const { firstname, lastname, email, category } = req.body;
-  
-    const query = 
-        `UPDATE People
-        SET FirstName = ?, LastName = ?, Email = ?, Category = ?
-        WHERE PeopleID = ?`;
-  
-    db.run(query, [firstname, lastname, email, category, PeopleID], function (err) {
-        if (err) return res.status(500).json({ 
-            error: 'Failed to update person', details: err.message 
-        });
-        if (this.changes === 0) return res.status(404).json({ 
-            error: `No person found with ID ${PeopleID}` 
-        });
-        res.json({ message: `Person with ID ${PeopleID} updated successfully`, updatedId: PeopleID });
-    });
-});
-  
-  
-
-//Delete
-app.delete('/people/:PeopleID', (req, res) => {
-    const { PeopleID } = req.params;
-    db.run('DELETE FROM People WHERE PeopleID = ?', [PeopleID], function (err) {
-        if (err) return res.status(500).json({ 
-            error: 'Failed to delete person', details: err.message 
-        });
-        if (this.changes === 0) return res.status(404).json({ 
-            error: `No record found with ID ${PeopleID}` 
-        });
-        res.json({ message: `Record with ID ${PeopleID} deleted successfully` });
-    });
-})
 
 
 // Teacher CRUD
