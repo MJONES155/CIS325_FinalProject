@@ -54,7 +54,7 @@ app.post('/login', (req, res) => {
         if (!passwordMatch) {
             return res.status(401).json({ message: 'Incorrect password' });
         }
-        const token = jwt.sign({ userId: user.UserID }, secretKey, { expiresIn: '5m' });
+        const token = jwt.sign({ userId: user.UserID }, secretKey, { expiresIn: '30m' });
         res.json({ message: 'Logged in', token: token });
     });
 });

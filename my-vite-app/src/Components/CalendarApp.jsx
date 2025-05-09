@@ -79,35 +79,39 @@ const CalendarApp = () => {
              {/* Tabs to switch views */}
              <div className="tabs flex space-x-4 mb-4">
                 <button
-                    className={`px-4 py-2 rounded ${activeTab === 'calendar' ? 'bg-blue-500 text-black' : 'bg-gray-200'}`}
+                    className={`px-4 py-2 rounded ${activeTab === 'calendar' ? 'bg-[#00a3ff] text-[#00a3ff]' : 'bg-gray-200'}`}
                     onClick={() => setActiveTab('calendar')}
                 >
                     Calendar
                 </button>
                 <br></br>
+                <br></br>
                 <button
-                    className={`px-4 py-2 rounded ${activeTab === 'people' ? 'bg-blue-500 text-black' : 'bg-gray-200'}`}
+                    className={`px-4 py-2 rounded ${activeTab === 'people' ? 'bg-[#00a3ff] text-black' : 'bg-gray-200'}`}
                     onClick={() => setActiveTab('people')}
                 >
                     People
                 </button>
                 <br></br>
+                <br></br>
                 <button
-                    className={`px-4 py-2 rounded ${activeTab === 'class' ? 'bg-blue-500 text-black' : 'bg-gray-200'}`}
+                    className={`px-4 py-2 rounded ${activeTab === 'class' ? 'bg-[#00a3ff] text-black' : 'bg-gray-200'}`}
                     onClick={() => setActiveTab('class')}
                 >
                     Classes
                 </button>
                 <br></br>
+                <br></br>
                 <button
-                    className={`px-4 py-2 rounded ${activeTab === 'hobby' ? 'bg-blue-500 text-black' : 'bg-gray-200'}`}
+                    className={`px-4 py-2 rounded ${activeTab === 'hobby' ? 'bg-[#00a3ff] text-black' : 'bg-gray-200'}`}
                     onClick={() => setActiveTab('hobby')}
                 >
                     Hobbies
                 </button>
                 <br></br>
+                <br></br>
                 <button
-                    className={`px-4 py-2 rounded ${activeTab === 'work' ? 'bg-blue-500 text-black' : 'bg-gray-200'}`}
+                    className={`px-4 py-2 rounded ${activeTab === 'work' ? 'bg-[#00a3ff] text-black' : 'bg-gray-200'}`}
                     onClick={() => setActiveTab('work')}
                 >
                     Work
