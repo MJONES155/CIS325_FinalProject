@@ -18,7 +18,11 @@ const Popup = ({ isOpen, closePopup, children }) => {
 //Hobby Component
 const Hobby = ({ showEventPopup, setShowEventPopup, selectedDate }) => {
     const [hobbies, setHobbies] = useState([]);
-    const [newHobby, setNewHobby] = useState({ hobbyname: '', start: '', end: ''});
+    const [newHobby, setNewHobby] = useState({ 
+        hobbyname: '', 
+        start: '', 
+        end: ''
+    });
     const [editHobby, setEditHobby] = useState(null); // Used for editing events
     const [error, setError] = useState('');
     const [isPopupOpen, setIsPopupOpen] = useState(false); // Tracks popup visibility
@@ -64,6 +68,28 @@ const Hobby = ({ showEventPopup, setShowEventPopup, selectedDate }) => {
         } catch (error) {
             
             setError('Failed to create hobby.');
+        }
+    };
+
+    const handleCreateClass = async () => {
+        try {
+            await axios.post('http://localhost:3001/class', newClass, {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            setNewClass({ title: '', time: '', startdate: '', enddate: '', daysoftheweek: '', teacher: '' }); // Resets fields for next input
+            setError('');
+            setIsPopupOpen(false); // Closes popup
+            // Re-fetch class
+            const response = await axios.get('http://localhost:3001/class', {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            setClasses(response.data);
+        } catch (error) {
+            setError('Failed to create class.');
         }
     };
 

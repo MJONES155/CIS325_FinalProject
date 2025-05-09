@@ -122,10 +122,10 @@ const People = ({ showEventPopup, setShowEventPopup, selectedDate }) => {
     const openEditPopup = (person) => {
         setEditPeople(person);
         setNewPeople({
-            firstname: person.firstname,
-            lastname: person.lastname,
-            email: person.email,
-            category: person.category
+            firstname: person.FirstName,
+            lastname: person.LastName,
+            email: person.Email,
+            category: person.Category
         });
         setIsEditMode(true);
         setIsPopupOpen(true);
