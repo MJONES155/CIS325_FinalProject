@@ -15,7 +15,7 @@ const Popup = ({ isOpen, closePopup, children }) => {
     );
 };
 
-const People = (showEventPopup, setShowEventPopup) => {
+const People = ({ showEventPopup, setShowEventPopup, selectedDate }) => {
     const [people, setPeople] = useState([]);
     const [newPeople, setNewPeople] = useState({ firstname: '', lastname: '', email: '', category: '' });
     const [editPeople, setEditPeople] = useState(null);
@@ -106,6 +106,12 @@ const People = (showEventPopup, setShowEventPopup) => {
         }
     };
 
+    useEffect(() => {
+            if (showEventPopup && selectedDate) {
+                openCreatePopup();
+                setShowEventPopup(false); // Reset the flag so it doesn’t reopen repeatedly
+            }
+        }, [showEventPopup, selectedDate]);
 
     const openCreatePopup = () => {
         setNewPeople({ firstname: '', lastname: '', email: '', category: '' });
@@ -116,10 +122,10 @@ const People = (showEventPopup, setShowEventPopup) => {
     const openEditPopup = (person) => {
         setEditPeople(person);
         setNewPeople({
-            firstname: person.firstname,
-            lastname: person.lastname,
-            email: person.email,
-            category: person.category
+            firstname: person.FirstName,
+            lastname: person.LastName,
+            email: person.Email,
+            category: person.Category
         });
         setIsEditMode(true);
         setIsPopupOpen(true);

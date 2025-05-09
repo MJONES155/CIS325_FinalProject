@@ -203,4 +203,3 @@ const Work = ({ showEventPopup, setShowEventPopup, selectedDate }) => {
 
 export default Work;
 
-event

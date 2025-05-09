@@ -18,7 +18,12 @@ const Popup = ({ isOpen, closePopup, children }) => {
 //Event Component
 const Event = ({ showEventPopup, setShowEventPopup, selectedDate }) => {
     const [events, setEvents] = useState([]);
-    const [newEvent, setNewEvent] = useState({ title: '', start: '', end: '', category: '' }); //used to get information for CRUD as well as for the popup
+    const [newEvent, setNewEvent] = useState({ 
+        title: '', 
+        start: '', 
+        end: '', 
+        category: '' 
+    }); //used to get information for CRUD as well as for the popup
     const [editEvent, setEditEvent] = useState(null); // Used for editing events
     const [error, setError] = useState('');
     const [isPopupOpen, setIsPopupOpen] = useState(false); // Tracks popup visibility
@@ -109,24 +114,23 @@ const Event = ({ showEventPopup, setShowEventPopup, selectedDate }) => {
     };
 
 
-    useEffect(() => {
-        if (showEventPopup && selectedDate) {
-            openCreatePopup();
-            setShowEventPopup(false); // Reset the flag so it doesn’t reopen repeatedly
-        }
-    }, [showEventPopup, selectedDate]);
+    // //useEffect(() => {
+    //     //if (showEventPopup && selectedDate) {
+    //         openCreatePopup();
+    //         setShowEventPopup(false); // Reset the flag so it doesn’t reopen repeatedly
+    //     }
+    // }, [showEventPopup, selectedDate]);
 
     // Popup open handler for creating
     const openCreatePopup = () => {
         const isoDate = selectedDate ? selectedDate.toISOString().slice(0, 16) : ''; // A better date-time format
-    
+        setIsEditMode(false);
         setNewEvent({
             title: '',
             start: isoDate,
             end: isoDate,
             category: ''
         });
-        setIsEditMode(false);
         setIsPopupOpen(true);
     };
 
@@ -134,10 +138,10 @@ const Event = ({ showEventPopup, setShowEventPopup, selectedDate }) => {
     const openEditPopup = (event) => {
         setEditEvent(event);
         setNewEvent({
-            title: event.title,
-            start: event.start,
-            end: event.end,
-            category: event.category
+            title: event.Title,
+            start: event.Start,
+            end: event.End,
+            category: event.Category
         });
         setIsEditMode(true);
         setIsPopupOpen(true);
@@ -176,26 +180,26 @@ const Event = ({ showEventPopup, setShowEventPopup, selectedDate }) => {
 
             {/* Event Popup */}
             <Popup isOpen={isPopupOpen} closePopup={() => setIsPopupOpen(false)}>
-                
+            <h3>{isEditMode ? 'Edit Event' : 'Create Event'}</h3>  {/* If it is edit mode display edit event. Else display create event */}
                 <input
                     type="text"
                     placeholder="Event Title"
-                    value={newEvent.title}
+                    value={newEvent.Title}
                     onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
                 />
                 <input
                     type="datetime-local" 
-                    value={newEvent.start}
+                    value={newEvent.Start}
                     onChange={(e) => setNewEvent({ ...newEvent, start: e.target.value })}
                 />
                 <input
                     type="datetime-local"
-                    value={newEvent.end}
+                    value={newEvent.End}
                     onChange={(e) => setNewEvent({ ...newEvent, end: e.target.value })}
                 />
                 <select
                     /* Displays all categories */
-                    value={newEvent.category}
+                    value={newEvent.Category}
                     onChange={(e) => setNewEvent({ ...newEvent, category: e.target.value })}
                 >
                     <option value="">Select Category</option>
@@ -205,7 +209,7 @@ const Event = ({ showEventPopup, setShowEventPopup, selectedDate }) => {
                     <option value="class">Class</option>
                     <option value="hobby">Hobby</option>
                 </select>
-                <h3>{isEditMode ? 'Edit Event' : 'Create Event'}</h3>  {/* If it is edit mode display edit event. Else display create event */}
+                
                 {isEditMode ? (
                     <button onClick={handleUpdateEvent}>Update Event</button>
                 ) : (
