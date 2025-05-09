@@ -137,13 +137,20 @@ const People = ({ showEventPopup, setShowEventPopup, selectedDate }) => {
             <button onClick={openCreatePopup}>Add Person</button>
             {error && <p>{error}</p>}
             <ul >
-                {people.map(person => (
-                    <li key={person.PeopleID}>
-                        {person.FirstName} {person.LastName} ({person.Category}) - {person.Email}
-                        <button onClick={() => openEditPopup(person)}>Edit</button>
-                        <button onClick={() => handleDeletePeople(person.PeopleID)}>Delete</button>
-                    </li>
-                ))}
+                <div>
+                    {people.map(person => (
+                        <li key={person.PeopleID}>
+                            <div className = "people">
+                                <h4>{person.FirstName}</h4>
+                                <p>{person.LastName}</p>
+                                <p>{person.Category}</p>
+                                <p>{person.Email}</p>
+                                <button onClick={() => openEditPopup(person)}>Edit</button>
+                                <button onClick={() => handleDeletePeople(person.PeopleID)}>Delete</button>
+                            </div>
+                        </li>
+                    ))}
+                </div>
             </ul>
 
             <Popup isOpen={isPopupOpen} closePopup={() => setIsPopupOpen(false)}>
